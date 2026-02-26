@@ -1,0 +1,14 @@
+{
+    "name": "oxfmt-config-inconsistency",
+    "version": "1.0.0",
+    "description": "Reproduction of oxfmt config inconsistency between CLI and VSCode extension",
+    "private": true,
+    "devDependencies": {
+        "oxfmt": "^0.35.0",
+        "typescript": "^5.9.3"
+    },
+    "scripts": {
+        "format": "oxfmt .",
+        "format:check": "oxfmt --check ."
+    }
+}

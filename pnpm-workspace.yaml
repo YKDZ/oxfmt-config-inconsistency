@@ -1,0 +1,5 @@
+packages:
+  - sub1
+  - sub2
+
+linkWorkspacePackages: true
