@@ -19,42 +19,53 @@ monorepo.
 ```
 oxfmt-config-inconsistency/    ← workspace root
 ├── .oxfmtrc.json              # printWidth: 80
-├── sub1/
-│   ├── .oxfmtrc.json          # printWidth: 100  (not yet created; same issue applies)
+├── sub1/                      ← control: no local config
 │   └── src/
-│       └── index.ts
-└── sub2/
+│       └── index.ts           # long line, already broken by printWidth: 80
+└── sub2/                      ← failing case: has its own config
     ├── .oxfmtrc.json          # printWidth: 120
     └── src/
-        └── index.ts           # contains a line that is exactly 119 characters long
+        └── index.ts           # 119-char line: fits in 120, exceeds 80
 ```
 
 ## Steps to Reproduce
 
-1. Clone or create the above project structure with the config files described.
-
-2. Install dependencies from the workspace root:
+1. Clone the reproduction repository and install dependencies:
    ```sh
+   git clone https://github.com/YKDZ/oxfmt-config-inconsistency
+   cd oxfmt-config-inconsistency
    pnpm install
    ```
 
-3. Open the workspace root folder (`oxfmt-config-inconsistency/`) in VSCode with the
-   `oxc.oxc-vscode` extension installed and enabled.
+2. Open the workspace root folder in VSCode with the `oxc.oxc-vscode` extension enabled.
 
-4. Open `sub2/src/index.ts`. The file contains this line (119 characters):
+### Control group — `sub1` (no local `.oxfmtrc.json`)
+
+3. Open `sub1/src/index.ts`. It contains a long line that wraps under `printWidth: 80`.
+   Both the extension and the CLI fall back to the root config (`printWidth: 80`) and
+   produce **identical output** — no conflict.
+
+   Verify from `sub1/`:
+   ```sh
+   cd sub1 && pnpm oxfmt --check src/index.ts
+   ```
+   CLI passes.
+
+### Failing case — `sub2` (has local `.oxfmtrc.json` with `printWidth: 120`)
+
+4. Open `sub2/src/index.ts`. It contains this 119-character line:
    ```ts
    const rootConfigTestVariableNameThatIsQuiteLong = "Length of this line is 119.........................................";
    ```
    The VSCode extension applies the **root** `.oxfmtrc.json` (`printWidth: 80`) and
-   wraps/breaks this line.
+   **breaks the line**.
 
-5. From the `sub2/` directory, verify what the CLI considers correct:
+5. Verify what the CLI considers correct from `sub2/`:
    ```sh
-   cd sub2
-   pnpm oxfmt --check src/index.ts
+   cd sub2 && pnpm oxfmt --check src/index.ts
    ```
-   The CLI correctly picks up `sub2/.oxfmtrc.json` (`printWidth: 120`) and reports the
-   119-character line as **already correctly formatted** (no line break needed).
+   The CLI picks up `sub2/.oxfmtrc.json` (`printWidth: 120`) and reports the file as
+   **already correctly formatted** — contradicting what the extension just wrote.
 
 ## Expected Behavior
 
